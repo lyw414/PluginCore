@@ -1,8 +1,14 @@
 #include "TaskPool.h"
+#include "Log/Log.h"
+
+
+#include <sys/prctl.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 namespace LYW_PLUGIN_CORE
 {
-    TaskPool::TaskPool(uint32 taskCount, uint32 holdThread, uint32 maxThread)
+    TaskPool::TaskPool(uint32 taskCount, uint32 holdThread, uint32 maxThread) : Thread(holdThread, maxThread)
     {
         m_isRun = true;
     }
@@ -18,7 +24,6 @@ namespace LYW_PLUGIN_CORE
     {
         return -1;
     }
-
 
     eTaskState TaskPool::Wait(TaskHandle taskHandle, int32 timeout)
     {
@@ -41,23 +46,39 @@ namespace LYW_PLUGIN_CORE
         return TASK_WAIT_TIMEOUT;
     }
 
-    pvoid * TaskPool::WaitTask(int32 timeout)
+    pvoid TaskPool::WaitTask(int32 timeout)
     {
         return NULL;
     }
 
-    void TaskPool::ExcuteTask(pvoid * taskNode)
+    void TaskPool::ExcuteTask(pvoid taskNode)
     {
 
     }
 
     pvoid TaskPool::Daemon(pvoid *ptr)
     {
+        TaskPool * self = (TaskPool *)ptr;
+        prctl(PR_SET_NAME, "TaskPool_Work_Daemon", 0, 0, 0);
+
+        if (NULL != self)
+        {
+            self->DaemonRun();
+        }
+        else
+        {
+            LOG_ERROR("TaskPool Ptr Nil! Program Exit!!!");
+            exit(-1);
+        }
         return NULL;
     }
 
     void TaskPool::DaemonRun()
     {
-        
+        while (m_isRun)
+        {
+            Thread::Daemon();
+            usleep(10000);
+        }
     }
 }

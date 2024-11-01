@@ -39,7 +39,7 @@ namespace LYW_PLUGIN_CORE
     /**
      * @brief           日志 - 单例
      */
-    class Log
+    class _VISIBLE_ Log
     {
         friend class PluginManager;
 

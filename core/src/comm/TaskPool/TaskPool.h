@@ -12,15 +12,15 @@
 #ifndef __LYW_PLUGIN_CORE_TASK_POLL_FILE_H__
 #define __LYW_PLUGIN_CORE_TASK_POLL_FILE_H__
 #include "PluginCoreCommDefine.h"
+#include "TaskPool/Thread.h"
 
 namespace LYW_PLUGIN_CORE
 {
-
     /**
      * @brief           任务池
      *
      */
-    class TaskPool
+    class TaskPool : public Thread
     {
         public:
             
@@ -31,7 +31,7 @@ namespace LYW_PLUGIN_CORE
              * @param holdThread        保持线程
              * @param maxThread         最大线程 
              */
-            TaskPool(uint32 taskCount, uint32 holdThread, uint32 maxThread);
+            TaskPool(uint32 taskCount = 256, uint32 holdThread = 4, uint32 maxThread = 16);
             
             /**
              * @brief                   析构
@@ -100,19 +100,29 @@ namespace LYW_PLUGIN_CORE
              *
              * @return                  != NULL 任务资源 == NULL 失败
              */
-            virtual pvoid * WaitTask(int32 timeout);
+            virtual pvoid WaitTask(int32 timeout);
 
             /**
              * @brief                   执行任务
              *
              * @param taskNode          任务资源 由 @WaitTask 获取
              */
-            virtual void ExcuteTask(pvoid * taskNode);
+            virtual void ExcuteTask(pvoid taskNode);
 
             /**
              * @brief                   守护线程
              */
             void DaemonRun();
+
+
+            /**
+             * @brief                   守护线程
+             *
+             * @param ptr               this 指针
+             *
+             * @return                  NULL
+             */
+            pvoid Daemon(pvoid *ptr);
 
         private:
             

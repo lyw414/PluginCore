@@ -41,6 +41,7 @@ namespace LYW_PLUGIN_CORE
              */
             typedef struct tag_ThreadNode
             {
+                Thread *self;       ///< this 指针
                 eThreadState state; ///< 线程状态
                 uint64 startTime; ///< 开始执行时间 0 未开始
             } ThreadNode_t;
@@ -69,7 +70,7 @@ namespace LYW_PLUGIN_CORE
              *
              * @return                  != NULL 任务资源 == NULL 失败
              */
-            virtual pvoid * WaitTask(int32 timeout) = 0;
+            virtual pvoid WaitTask(int32 timeout) = 0;
 
 
             /**
@@ -77,7 +78,12 @@ namespace LYW_PLUGIN_CORE
              *
              * @param taskNode          任务资源 由 @WaitTask 获取
              */
-            virtual void ExcuteTask(pvoid * taskNode) = 0;
+            virtual void ExcuteTask(pvoid taskNode) = 0;
+
+            /**
+             * @brief                   守护
+             */
+            void Daemon();
 
         private:
             /**
@@ -109,17 +115,13 @@ namespace LYW_PLUGIN_CORE
 
             /**
              * @brief                   工作线程
+             *
+             * @param ptr               线程资源节点
              */
-            void WorkThread(pvoid usrPtr);
-
-            /**
-             * @brief                   守护
-             */
-            void Daemon();
+            void WorkThread(ThreadNode_t *node);
 
         private:
-            
-
+            uint64 m_tick;              ///< ms 减少clock_gettime 调用 不需要很高的时间精度
     };
 }
 
