@@ -15,16 +15,34 @@
 ```json
 {
     "defaultLoad" : [
-        "ID"
+        "PluginID"
     ],
     "plugins" : {
-        "ID" : {
+        "PluginID" : {
             "resource" : "",
-            "type" : "",
+            "type" : "TypeID",
             "param" : {
-            }
+            },
+            "depends" : ["PluginID"],
+            "loads" : ["PluginID"]
         }
     }
 }
 
+```
+
+## ID映射表说明
+
+ * 插件ID为 Led 时 索引为 0
+ * 类型ID为 Led 时 索引为 0
+
+```json
+{
+    "PluginID" : {
+        "Led" : 0
+    },
+    "TypeID" : {
+        "Led" : 0
+    }
+}
 ```
