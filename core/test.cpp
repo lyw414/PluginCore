@@ -5,6 +5,8 @@
 
 #include <unistd.h>
 #include <stdint.h>
+#include <time.h>
+#include <stdlib.h>
 
 
 namespace LYW_PLUGIN_CORE
@@ -20,7 +22,10 @@ namespace LYW_PLUGIN_CORE
             virtual pvoid WaitTask(int32 timeout)
             {
                 pvoid t = (pvoid)10;
-                usleep(500000);
+                if (timeout != 0)
+                {
+                    sleep(100000);
+                }
                 return t;
             }
 
@@ -39,7 +44,7 @@ int main()
 
     while (true)
     {
-        usleep(10000);
+        usleep(100000);
         a.Daemon();
     }
 

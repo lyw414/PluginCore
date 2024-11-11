@@ -77,7 +77,7 @@ namespace LYW_PLUGIN_CORE
     bool Thread::CreateWorkThread(ThreadNode_t *threadNode)
     {
         pthread_t thread = {0};
-        pthread_attr_t attr = {0};    
+        pthread_attr_t attr;    
 
         if (NULL == threadNode)
         {
@@ -103,7 +103,10 @@ namespace LYW_PLUGIN_CORE
 
     bool Thread::DestroyWorKThread(ThreadNode_t *threadNode)
     {
-        //free(threadNode);
+        if (NULL == threadNode)
+        {
+            return false;
+        }
         return true;
     }
 
@@ -150,12 +153,12 @@ namespace LYW_PLUGIN_CORE
         eThreadOpt opt = THREAD_OPT_NONE;
 
         int32 freeThreadCount = 0;
+        //非阻塞线程（执行时间 不超过1s）
+        int32 noBlockThreadCount = 0;
         int32 totalThreadCount = 0;
 
         //线程调整
         //执行时间超过 1s的线程 都不计算到线程池总数里
-        totalThreadCount = m_threadNode.Size();
-
         for (int32 iLoop = 0; iLoop < m_threadNode.Size(); iLoop++)
         {
             if (m_threadNode.IsIndexValid(iLoop) && m_threadNode[iLoop] != NULL)
@@ -166,16 +169,19 @@ namespace LYW_PLUGIN_CORE
                     case THREAD_OCCUPY:
                     {
                         //执行时间超过1s 不计入总数
-                        if (m_threadNode[iLoop]->startTime + 1000 < m_tick)
+                        if (m_threadNode[iLoop]->startTime + 1000 >= m_tick)
                         {
                             //不能通过执行时间去判断当前线程是计算密集型 还是 IO密集型 （针对IO密集型线程 可以通过增加线程提升效率） 
-                            totalThreadCount--;
+                            noBlockThreadCount++;
                         }
+
+                        totalThreadCount++;
                         break;
                     }
                     case THREAD_FREE:
                     {
                         freeThreadCount++;
+                        totalThreadCount++;
                         break;
                     }
                     default:
@@ -183,10 +189,6 @@ namespace LYW_PLUGIN_CORE
                         break;
                     }
                 }
-            }
-            else
-            {
-                totalThreadCount--;
             }
         }
 
@@ -224,7 +226,7 @@ namespace LYW_PLUGIN_CORE
                 m_checkRecord = 0;
             }
         
-            if (m_checkRecord < -3 && totalThreadCount < m_maxThreadCount)
+            if ((totalThreadCount < m_holdThreadCount) || (m_checkRecord < -5 && noBlockThreadCount < m_maxThreadCount))
             {
                 opt = THREAD_OPT_CREATE;
                 m_checkRecord = 0;
