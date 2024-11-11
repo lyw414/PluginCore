@@ -20,6 +20,8 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/out/lib)
 set(SOURCES 
     ./src/comm/Log/Log.cpp
     ./src/comm/Time/Time.cpp
+    ./src/comm/NodeList/NodeList.cpp
+    ./src/comm/TaskPool/Thread.cpp
 )
 
 #头文件拷贝
@@ -55,11 +57,11 @@ set(BUILD_TYPE "debug")
 
 if (BUILD_TYPE STREQUAL "debug")
     #target_compile_options(PluginCore PRIVATE -g -Wall -fsanitize=address -fno-omit-frame-pointer)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wall -fsanitize=address -fno-omit-frame-pointer")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wall -fsanitize=address -fno-omit-frame-pointer -lpthread -ldl")
     message(STATUS "BUILD DEBUG PROGRAM ...")
 else ()
     #target_compile_options(PluginCore PRIVATE -g -Wall -fsanitize=address -fno-omit-frame-pointer)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -Wall")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -Wall -lpthread -ldl")
     message(STATUS "BUILD RELEASE PROGRAM ...")
 endif ()
 

@@ -6,12 +6,54 @@
 #include <pthread.h>
 #include <errno.h>
 #include <sys/prctl.h>
+#include <unistd.h>
 
 namespace LYW_PLUGIN_CORE
 {
     Thread::Thread(uint32 holdThread, uint32 maxThread)
     {
         uint64 m_tick = Time::TickCountMS();
+
+        m_checkTick = m_tick;
+
+        m_checkRecord = 0;
+
+        m_threadNode.Resize(32);
+
+        m_maxThreadCount = maxThread;
+
+        m_holdThreadCount = holdThread;
+
+    }
+
+    Thread::~Thread()
+    {
+        int32 retry = 3;
+        for (int32 iLoop = 0; iLoop < m_threadNode.Size(); iLoop++)
+        {
+            if (m_threadNode.IsIndexValid(iLoop) && m_threadNode[iLoop] != NULL)
+            {
+                m_threadNode[iLoop]->state = THREAD_DROP;
+             }
+        }
+
+        for (int32 iLoop = 0; iLoop < m_threadNode.Size(); iLoop++)
+        {
+            retry = 3;
+            if (m_threadNode.IsIndexValid(iLoop) && m_threadNode[iLoop] != NULL)
+            {
+                while (retry > 0 && THREAD_FINISHED != m_threadNode[iLoop]->state)
+                {
+                    sleep(1);
+                    retry --;
+                }
+
+                if (retry <= 0)
+                {
+                    LOG_STACK_INFO("Thread Not Finished! MayCause Core!");
+                }
+            }
+        }
     }
 
     pvoid Thread::WorkThreadEnter(pvoid ptr)
@@ -32,7 +74,7 @@ namespace LYW_PLUGIN_CORE
         return NULL;
     }
 
-    bool Thread::CreateWorKThread(ThreadNode_t *threadNode)
+    bool Thread::CreateWorkThread(ThreadNode_t *threadNode)
     {
         pthread_t thread = {0};
         pthread_attr_t attr = {0};    
@@ -46,6 +88,10 @@ namespace LYW_PLUGIN_CORE
         //设置detach属性
         pthread_attr_init(&attr);
         pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+        threadNode->self = this;
+        threadNode->startTime = 0;
+        threadNode->state = THREAD_FREE;
+
         if (pthread_create(&thread, &attr, WorkThreadEnter, threadNode) > 0 )
         {
             LOG_ERROR("Pthread Create Failed!! errno [%d]", errno);
@@ -55,9 +101,16 @@ namespace LYW_PLUGIN_CORE
         return true;
     }
 
+    bool Thread::DestroyWorKThread(ThreadNode_t *threadNode)
+    {
+        //free(threadNode);
+        return true;
+    }
+
+
     void Thread::WorkThread(ThreadNode_t *node)
     {
-        void * task = NULL;
+        pvoid task = NULL;
 
         while (THREAD_DROP != node->state)
         {
@@ -71,7 +124,9 @@ namespace LYW_PLUGIN_CORE
             node->state = THREAD_FREE;
 
             //阻塞获取任务
-            if (NULL != (task = WaitTask(1000)))
+
+            task = WaitTask(1000);
+            if (NULL != task)
             {
                 //获取到任务
                 //设置开始时间
@@ -89,6 +144,149 @@ namespace LYW_PLUGIN_CORE
 
     void Thread::Daemon()
     {
+        //int32 opt = ;
         m_tick = Time::TickCountMS();
+
+        eThreadOpt opt = THREAD_OPT_NONE;
+
+        int32 freeThreadCount = 0;
+        int32 totalThreadCount = 0;
+
+        //线程调整
+        //执行时间超过 1s的线程 都不计算到线程池总数里
+        totalThreadCount = m_threadNode.Size();
+
+        for (int32 iLoop = 0; iLoop < m_threadNode.Size(); iLoop++)
+        {
+            if (m_threadNode.IsIndexValid(iLoop) && m_threadNode[iLoop] != NULL)
+            {
+                //查看线程节点状态
+                switch(m_threadNode[iLoop]->state)
+                {
+                    case THREAD_OCCUPY:
+                    {
+                        //执行时间超过1s 不计入总数
+                        if (m_threadNode[iLoop]->startTime + 1000 < m_tick)
+                        {
+                            //不能通过执行时间去判断当前线程是计算密集型 还是 IO密集型 （针对IO密集型线程 可以通过增加线程提升效率） 
+                            totalThreadCount--;
+                        }
+                        break;
+                    }
+                    case THREAD_FREE:
+                    {
+                        freeThreadCount++;
+                        break;
+                    }
+                    default:
+                    {
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                totalThreadCount--;
+            }
+        }
+
+        //1秒内连续5次探测均出现限制线程 
+        if (m_checkTick + 200 < m_tick || m_checkTick > m_tick)
+        {
+            m_checkTick = m_tick;
+
+            if (freeThreadCount > m_holdThreadCount)
+            {
+                if (m_checkRecord < 0)
+                {
+                    m_checkRecord = 0;
+                }
+
+                m_checkRecord++;
+            }
+            else if (freeThreadCount < m_holdThreadCount)
+            {
+                if (m_checkRecord > 0)
+                {
+                    m_checkRecord = 0;
+                }
+                m_checkRecord--;
+            }
+            else
+            {
+                m_checkRecord = 0;
+                opt = THREAD_OPT_NONE;
+            }
+
+            if (m_checkRecord > 5)
+            {
+                opt = THREAD_OPT_FREE;
+                m_checkRecord = 0;
+            }
+        
+            if (m_checkRecord < -3 && totalThreadCount < m_maxThreadCount)
+            {
+                opt = THREAD_OPT_CREATE;
+                m_checkRecord = 0;
+            }
+        }
+        
+        switch (opt)
+        {
+            case THREAD_OPT_CREATE:
+            {
+                int32 nodeIndex = -1;
+
+                for (int32 iLoop = 0; iLoop < m_threadNode.Size(); iLoop++)
+                {
+                    //找到空闲的所以并插入
+                    if (!m_threadNode.IsIndexValid(iLoop))
+                    {
+                        nodeIndex = iLoop;
+                    }
+                }
+
+                if (nodeIndex < 0)
+                {
+                    nodeIndex = m_threadNode.Size();
+                }
+
+                ThreadNode_t *node = new(std::nothrow) ThreadNode_t;
+                if (NULL == node)
+                {
+                    LOG_STACK_INFO("New Failed\n");
+                    return;
+                }
+                
+                //创建线程
+                CreateWorkThread(node);
+                
+                //登记
+                m_threadNode[nodeIndex] = node;
+                break;
+            }
+            case THREAD_OPT_FREE:
+            {
+                for (int32 iLoop = 0; iLoop < m_threadNode.Size(); iLoop++)
+                {
+                    if (m_threadNode.IsIndexValid(iLoop) && m_threadNode[iLoop] != NULL)
+                    {
+                        //仅操作空闲线程
+                        if (THREAD_FREE == m_threadNode[iLoop]->state)
+                        {
+                            //空闲线程修改状态
+                            m_threadNode[iLoop]->state = THREAD_DROP;
+                            m_threadNode.Erase(iLoop);
+                            break;
+                        }
+                    }
+                }
+                break;
+            }
+            default:
+            {
+                break;
+            }
+        }
     }
 }

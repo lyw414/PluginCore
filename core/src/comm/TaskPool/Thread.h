@@ -12,7 +12,11 @@
 #ifndef __LYW_PLUGIN_CORE_THREAD_FILE_H__
 #define __LYW_PLUGIN_CORE_THREAD_FILE_H__
 #include "PluginCoreCommDefine.h"
+#include "NodeList/NodeList.h"
+#include "DynamicArray/DynamicArray.hpp"
+
 #include <string>
+#include <vector>
 
 namespace LYW_PLUGIN_CORE
 {
@@ -25,6 +29,17 @@ namespace LYW_PLUGIN_CORE
         protected:
             typedef Function<void(pvoid)> ThreadEnterFunc; ///< 线程函数
         private:
+
+            /**
+             * @brief           线程操作
+             */ 
+            typedef enum tag_ThreadOpt
+            {
+                THREAD_OPT_NONE,    ///< 无操作
+                THREAD_OPT_FREE,    ///< 释放线程
+                THREAD_OPT_CREATE   ///< 创建线程
+            } eThreadOpt;
+
             /**
              * @brief           线程状态
              */
@@ -60,9 +75,8 @@ namespace LYW_PLUGIN_CORE
              */
             virtual ~Thread();
 
-
-
         protected:
+        public:
             /**
              * @brief                   阻塞等待任务
              *
@@ -93,7 +107,7 @@ namespace LYW_PLUGIN_CORE
              * 
              * @return                  true 成功 false 失败
              */
-            bool CreateWorKThread(ThreadNode_t *threadNode);
+            bool CreateWorkThread(ThreadNode_t *threadNode);
 
             /**
              * @brief                   销毁工作线程
@@ -122,6 +136,16 @@ namespace LYW_PLUGIN_CORE
 
         private:
             uint64 m_tick;              ///< ms 减少clock_gettime 调用 不需要很高的时间精度
+
+            DynamicArray<ThreadNode_t *> m_threadNode; ///< 线程节点资源
+            
+            int32 m_maxThreadCount;     ///< 最大工作线程数量
+
+            int32 m_holdThreadCount;    ///< 持有线程数量
+
+            uint64 m_checkTick;         ///< 记录上一次操作时间
+
+            int32 m_checkRecord;        ///< 检测记录
     };
 }
 
