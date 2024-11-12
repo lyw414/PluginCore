@@ -97,6 +97,13 @@ namespace LYW_PLUGIN_CORE
             virtual void ExcuteTask(pvoid taskNode) = 0;
 
             /**
+             * @brief                   任务资源平常
+             *
+             * @return                  0 ~ 10 0表示空闲 10表示繁忙
+             */
+            virtual int32 TaskResourceAssessment();
+
+            /**
              * @brief                   守护
              */
             void Daemon();

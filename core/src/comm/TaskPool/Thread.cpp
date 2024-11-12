@@ -127,7 +127,6 @@ namespace LYW_PLUGIN_CORE
             node->state = THREAD_FREE;
 
             //阻塞获取任务
-
             task = WaitTask(1000);
             if (NULL != task)
             {
@@ -145,6 +144,11 @@ namespace LYW_PLUGIN_CORE
         LOG_INFO("Thread Finished!");
     }
 
+    int32 Thread::TaskResourceAssessment()
+    {
+        return 0;
+    }
+
     void Thread::Daemon()
     {
         //int32 opt = ;
@@ -153,9 +157,8 @@ namespace LYW_PLUGIN_CORE
         eThreadOpt opt = THREAD_OPT_NONE;
 
         int32 freeThreadCount = 0;
-        //非阻塞线程（执行时间 不超过1s）
+        //非阻塞线程（执行时间 不超过1s, 包括空闲线程）
         int32 noBlockThreadCount = 0;
-        int32 totalThreadCount = 0;
 
         //线程调整
         //执行时间超过 1s的线程 都不计算到线程池总数里
@@ -175,13 +178,12 @@ namespace LYW_PLUGIN_CORE
                             noBlockThreadCount++;
                         }
 
-                        totalThreadCount++;
                         break;
                     }
                     case THREAD_FREE:
                     {
                         freeThreadCount++;
-                        totalThreadCount++;
+                        noBlockThreadCount++;
                         break;
                     }
                     default:
@@ -225,11 +227,21 @@ namespace LYW_PLUGIN_CORE
                 opt = THREAD_OPT_FREE;
                 m_checkRecord = 0;
             }
-        
-            if ((totalThreadCount < m_holdThreadCount) || (m_checkRecord < -5 && noBlockThreadCount < m_maxThreadCount))
+
+            //资源评测超过6 不会移除线程
+            //线程总数不足持有线程数量
+            //持续探测无空闲线程 
+            if ((noBlockThreadCount < m_holdThreadCount) || (m_checkRecord < -5 || (TaskResourceAssessment() >= 6)))
             {
-                opt = THREAD_OPT_CREATE;
-                m_checkRecord = 0;
+                if (noBlockThreadCount < m_maxThreadCount)
+                {
+                    opt = THREAD_OPT_CREATE;
+                    m_checkRecord = 0;
+                }
+                else
+                {
+                    opt = THREAD_OPT_NONE;
+                }
             }
         }
         

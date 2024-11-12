@@ -19,6 +19,11 @@ namespace LYW_PLUGIN_CORE
                 srand(time(NULL));
             }
             
+            virtual int32 TaskResourceAssessment()
+            {
+                return 6;
+            }
+
             virtual pvoid WaitTask(int32 timeout)
             {
                 pvoid t = (pvoid)10;

@@ -50,7 +50,6 @@ namespace LYW_PLUGIN_CORE
              */
             TaskHandle AsyncExc(ID id, TaskFunc func, pvoid usrPtr, const byte describe[128] = NULL);
 
-
             /**
              * @brief                   等待任务完成
              *
@@ -110,10 +109,16 @@ namespace LYW_PLUGIN_CORE
             virtual void ExcuteTask(pvoid taskNode);
 
             /**
+             * @brief                   任务资源平常
+             *
+             * @return                  0 ~ 10 0表示空闲 10表示繁忙
+             */
+            virtual int32 TaskResourceAssessment();
+
+            /**
              * @brief                   守护线程
              */
             void DaemonRun();
-
 
             /**
              * @brief                   守护线程

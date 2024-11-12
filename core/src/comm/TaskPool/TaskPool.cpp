@@ -81,4 +81,9 @@ namespace LYW_PLUGIN_CORE
             usleep(10000);
         }
     }
+
+    int32 TaskPool::TaskResourceAssessment()
+    {
+        return 0;
+    }
 }
