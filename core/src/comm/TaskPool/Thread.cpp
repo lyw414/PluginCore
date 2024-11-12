@@ -171,8 +171,8 @@ namespace LYW_PLUGIN_CORE
                 {
                     case THREAD_OCCUPY:
                     {
-                        //执行时间超过1s 不计入总数
-                        if (m_threadNode[iLoop]->startTime + 1000 >= m_tick)
+                        //执行时间超过3s 不计入总数
+                        if (m_threadNode[iLoop]->startTime + 3000 >= m_tick)
                         {
                             //不能通过执行时间去判断当前线程是计算密集型 还是 IO密集型 （针对IO密集型线程 可以通过增加线程提升效率） 
                             noBlockThreadCount++;
@@ -222,7 +222,7 @@ namespace LYW_PLUGIN_CORE
                 opt = THREAD_OPT_NONE;
             }
 
-            if (m_checkRecord > 5)
+            if (m_checkRecord > 5 && noBlockThreadCount > m_holdThreadCount)
             {
                 opt = THREAD_OPT_FREE;
                 m_checkRecord = 0;

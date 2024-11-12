@@ -21,15 +21,16 @@ namespace LYW_PLUGIN_CORE
             
             virtual int32 TaskResourceAssessment()
             {
-                return 6;
+                return 0;
             }
 
             virtual pvoid WaitTask(int32 timeout)
             {
-                pvoid t = (pvoid)10;
+                usleep((uint32)rand() % 50000);
+                pvoid t = (pvoid)((uint64)rand()%50000);
                 if (timeout != 0)
                 {
-                    sleep(100000);
+                    //sleep(100000);
                 }
                 return t;
             }
@@ -45,7 +46,6 @@ namespace LYW_PLUGIN_CORE
 int main()
 {
     LYW_PLUGIN_CORE::A a;
-    sleep(10);
 
     while (true)
     {
