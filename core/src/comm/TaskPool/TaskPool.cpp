@@ -8,7 +8,7 @@
 
 namespace LYW_PLUGIN_CORE
 {
-    TaskPool::TaskPool(uint32 taskCount, uint32 holdThread, uint32 maxThread) : Thread(holdThread, maxThread)
+    TaskPool::TaskPool(uint32 taskCount, uint32 holdThread, uint32 maxThread) : Thread(holdThread, maxThread), Task(taskCount)
     {
         m_isRun = true;
     }

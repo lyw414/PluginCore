@@ -13,6 +13,7 @@
 #define __LYW_PLUGIN_CORE_TASK_POLL_FILE_H__
 #include "PluginCoreCommDefine.h"
 #include "TaskPool/Thread.h"
+#include "TaskPool/Task.h"
 
 namespace LYW_PLUGIN_CORE
 {
@@ -20,7 +21,8 @@ namespace LYW_PLUGIN_CORE
      * @brief           任务池
      *
      */
-    class TaskPool : public Thread
+    class TaskPool : public Thread,
+                     public Task
     {
         public:
             
