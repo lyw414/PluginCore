@@ -12,10 +12,10 @@ namespace LYW_PLUGIN_CORE
         return (tp.tv_sec * 1000LL + tp.tv_nsec / 1000000);
     }
 
-    bool Time::DateStr(byte str[32])
+    bool Time::DateStr(byte str[64])
     {
         time_t now = 0;
-        struct tm date = {0};
+        struct tm date;
 
         if (NULL == str)
         {
@@ -28,7 +28,7 @@ namespace LYW_PLUGIN_CORE
 
         localtime_r(&now, &date);
 
-        snprintf(str, 32, "%04d-%02d-%02d %02d:%02d:%02d", date.tm_year + 1900, date.tm_mon + 1,  date.tm_mday, date.tm_hour, date.tm_min, date.tm_sec);
+        snprintf(str, 64, "%04d-%02d-%02d %02d:%02d:%02d", date.tm_year + 1900, date.tm_mon + 1,  date.tm_mday, date.tm_hour, date.tm_min, date.tm_sec);
             return true;
     }
 }

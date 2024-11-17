@@ -33,6 +33,7 @@ namespace LYW_PLUGIN_CORE
 
     int32 Log::DefaultWrite(const byte * data, int32 len)
     {
+        if (len > 0) {}
         printf("%s", data);
         return 0;
     }

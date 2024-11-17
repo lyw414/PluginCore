@@ -34,7 +34,7 @@ namespace LYW_PLUGIN_CORE
              *
              * @return              true 成功 false 失败
              */
-            static bool DateStr(byte str[32]);
+            static bool DateStr(byte str[64]);
     };
 }
 #endif

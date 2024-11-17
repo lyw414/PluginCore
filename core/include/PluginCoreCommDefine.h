@@ -78,7 +78,7 @@ namespace LYW_PLUGIN_CORE
             Function & operator = (pvoid ptr)\
             {\
                 m_obj = NULL;\
-                m_func.staticFunc = NULL;\
+                m_func.staticFunc = ptr;\
                 return *this;\
             }\
             Function & operator = (StaticFunc_f func)\

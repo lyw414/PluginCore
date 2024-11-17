@@ -22,6 +22,7 @@ set(SOURCES
     ./src/comm/Time/Time.cpp
     ./src/comm/NodeList/NodeList.cpp
     ./src/comm/TaskPool/Thread.cpp
+    ./src/comm/TaskPool/Task.cpp
 )
 
 #头文件拷贝

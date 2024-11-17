@@ -45,12 +45,14 @@ namespace LYW_PLUGIN_CORE
              *
              * @param id                任务归属ID
              * @param func              任务回调
+             * @param param             参数资源指针（不维护生命周期）
+             * @param len               参数长度
              * @param usrPtr            用户指针
              * @param describe[128]     任务描述
              *
              * @return 
              */
-            TaskHandle AsyncExc(ID id, TaskFunc func, pvoid usrPtr, const byte describe[128] = NULL);
+            TaskHandle AsyncExc(ID id, TaskFunc func, pvoid param, int32 len, pvoid usrPtr, const byte describe[128] = NULL);
 
             /**
              * @brief                   等待任务完成
