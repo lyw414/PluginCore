@@ -13,7 +13,7 @@
 #define __LYW_PLUGIN_CORE_THREAD_FILE_H__
 #include "PluginCoreCommDefine.h"
 #include "NodeList/NodeList.h"
-#include "DynamicArray/DynamicArray.hpp"
+//#include "DynamicArray/DynamicArray.hpp"
 
 
 
@@ -108,6 +108,7 @@ namespace LYW_PLUGIN_CORE
              */
             void Daemon();
 
+
         private:
             /**
              * @brief                   创建线程
@@ -143,10 +144,15 @@ namespace LYW_PLUGIN_CORE
              */
             void WorkThread(ThreadNode_t *node);
 
+            /**
+             * @brief                   初始化操作
+             */
+            void Init();
+
         private:
             uint64 m_tick;              ///< ms 减少clock_gettime 调用 不需要很高的时间精度
 
-            DynamicArray<ThreadNode_t *> m_threadNode; ///< 线程节点资源
+            std::vector<ThreadNode_t *> m_threadNode; ///< 线程节点资源
             
             int32 m_maxThreadCount;     ///< 最大工作线程数量
 
@@ -155,6 +161,8 @@ namespace LYW_PLUGIN_CORE
             uint64 m_checkTick;         ///< 记录上一次操作时间
 
             int32 m_checkRecord;        ///< 检测记录
+            
+            bool m_isInit;              ///< 是否初始化
     };
 }
 

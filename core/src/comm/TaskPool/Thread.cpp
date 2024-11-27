@@ -18,34 +18,37 @@ namespace LYW_PLUGIN_CORE
 
         m_checkRecord = 0;
 
-        m_threadNode.Resize(32);
+        m_threadNode.resize(maxThread);
 
         m_maxThreadCount = maxThread;
 
         m_holdThreadCount = holdThread;
+
+        m_isInit = false;
+        
 
     }
 
     Thread::~Thread()
     {
         int32 retry = 3;
-        for (int32 iLoop = 0; iLoop < m_threadNode.Size(); iLoop++)
+        for (int32 iLoop = 0; iLoop < m_threadNode.size(); iLoop++)
         {
-            if (m_threadNode.IsIndexValid(iLoop) && m_threadNode[iLoop] != NULL)
+            if (NULL != m_threadNode[iLoop])
             {
                 m_threadNode[iLoop]->state = THREAD_DROP;
-             }
+            }
         }
 
-        for (int32 iLoop = 0; iLoop < m_threadNode.Size(); iLoop++)
+        for (int32 iLoop = 0; iLoop < m_threadNode.size(); iLoop++)
         {
             retry = 3;
-            if (m_threadNode.IsIndexValid(iLoop) && m_threadNode[iLoop] != NULL)
+            if (m_threadNode[iLoop] != NULL)
             {
                 while (retry > 0 && THREAD_FINISHED != m_threadNode[iLoop]->state)
                 {
                     sleep(1);
-                    retry --;
+                    retry--;
                 }
 
                 if (retry <= 0)
@@ -159,12 +162,15 @@ namespace LYW_PLUGIN_CORE
         int32 freeThreadCount = 0;
         //非阻塞线程（执行时间 不超过1s, 包括空闲线程）
         int32 noBlockThreadCount = 0;
+        
+        //执行初始化
+        Init();
 
         //线程调整
         //执行时间超过 1s的线程 都不计算到线程池总数里
-        for (int32 iLoop = 0; iLoop < m_threadNode.Size(); iLoop++)
+        for (int32 iLoop = 0; iLoop < m_threadNode.size(); iLoop++)
         {
-            if (m_threadNode.IsIndexValid(iLoop) && m_threadNode[iLoop] != NULL)
+            if (m_threadNode[iLoop] != NULL)
             {
                 //查看线程节点状态
                 switch(m_threadNode[iLoop]->state)
@@ -251,10 +257,10 @@ namespace LYW_PLUGIN_CORE
             {
                 int32 nodeIndex = -1;
 
-                for (int32 iLoop = 0; iLoop < m_threadNode.Size(); iLoop++)
+                for (int32 iLoop = 0; iLoop < m_threadNode.size(); iLoop++)
                 {
                     //找到空闲的所以并插入
-                    if (!m_threadNode.IsIndexValid(iLoop))
+                    if (NULL == m_threadNode[iLoop])
                     {
                         nodeIndex = iLoop;
                     }
@@ -262,7 +268,9 @@ namespace LYW_PLUGIN_CORE
 
                 if (nodeIndex < 0)
                 {
-                    nodeIndex = m_threadNode.Size();
+                    //尾部追加
+                    nodeIndex = m_threadNode.size();
+                    m_threadNode.push_back(NULL);
                 }
 
                 ThreadNode_t *node = new(std::nothrow) ThreadNode_t;
@@ -281,16 +289,16 @@ namespace LYW_PLUGIN_CORE
             }
             case THREAD_OPT_FREE:
             {
-                for (int32 iLoop = 0; iLoop < m_threadNode.Size(); iLoop++)
+                for (int32 iLoop = 0; iLoop < m_threadNode.size(); iLoop++)
                 {
-                    if (m_threadNode.IsIndexValid(iLoop) && m_threadNode[iLoop] != NULL)
+                    if (m_threadNode[iLoop] != NULL)
                     {
                         //仅操作空闲线程
                         if (THREAD_FREE == m_threadNode[iLoop]->state)
                         {
                             //空闲线程修改状态
                             m_threadNode[iLoop]->state = THREAD_DROP;
-                            m_threadNode.Erase(iLoop);
+                            m_threadNode[iLoop] = NULL;
                             break;
                         }
                     }
@@ -300,6 +308,33 @@ namespace LYW_PLUGIN_CORE
             default:
             {
                 break;
+            }
+        }
+    }
+
+    void  Thread::Init()
+    {
+        if (!m_isInit)
+        {
+            m_isInit = true;
+            
+            //拉起工作线程
+            for (int32 iLoop = 0; iLoop < m_threadNode.size(); iLoop++)
+            {
+                m_threadNode[iLoop] = NULL;
+            }
+
+            for (int32 iLoop = 0; iLoop < m_holdThreadCount; iLoop++)
+            {
+                ThreadNode_t *node = new(std::nothrow) ThreadNode_t;
+                if (NULL == node)
+                {
+                    LOG_STACK_INFO("New Failed\n");
+                    continue;
+                }
+                    
+                //创建线程
+                CreateWorkThread(node);
             }
         }
     }
