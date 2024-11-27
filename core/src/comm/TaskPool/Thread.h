@@ -13,8 +13,6 @@
 #define __LYW_PLUGIN_CORE_THREAD_FILE_H__
 #include "PluginCoreCommDefine.h"
 #include "NodeList/NodeList.h"
-//#include "DynamicArray/DynamicArray.hpp"
-
 
 
 #include <string>
@@ -73,7 +71,7 @@ namespace LYW_PLUGIN_CORE
             Thread(uint32 holdThread, uint32 maxThread);
 
             /**
-             * @brief                   析构
+             * @brief                   析构 析构前需要停止 Daemon调度
              */
             virtual ~Thread();
 
@@ -104,10 +102,21 @@ namespace LYW_PLUGIN_CORE
             virtual int32 TaskResourceAssessment();
 
             /**
+             * @brief                   CPU资源评级
+             *
+             * @return                  0 ~ 10 0表示空闲 10表示繁忙
+             */
+            virtual int32 CPUResourceAssessment();
+
+            /**
              * @brief                   守护
              */
             void Daemon();
 
+            /**
+             * @brief                   快速拉起线程 开始Daemon前执行
+             */
+            void QuickCreateThread();
 
         private:
             /**
@@ -144,16 +153,11 @@ namespace LYW_PLUGIN_CORE
              */
             void WorkThread(ThreadNode_t *node);
 
-            /**
-             * @brief                   初始化操作
-             */
-            void Init();
-
         private:
             uint64 m_tick;              ///< ms 减少clock_gettime 调用 不需要很高的时间精度
 
             std::vector<ThreadNode_t *> m_threadNode; ///< 线程节点资源
-            
+            int32 m_threadCount;        ///< 活跃线程数
             int32 m_maxThreadCount;     ///< 最大工作线程数量
 
             int32 m_holdThreadCount;    ///< 持有线程数量
@@ -161,8 +165,6 @@ namespace LYW_PLUGIN_CORE
             uint64 m_checkTick;         ///< 记录上一次操作时间
 
             int32 m_checkRecord;        ///< 检测记录
-            
-            bool m_isInit;              ///< 是否初始化
     };
 }
 

@@ -24,8 +24,10 @@ namespace LYW_PLUGIN_CORE
 
         m_holdThreadCount = holdThread;
 
-        m_isInit = false;
-        
+        for (int32 iLoop = 0; iLoop < m_threadNode.size(); iLoop++)
+        {
+            m_threadNode[iLoop] = NULL;
+        }
 
     }
 
@@ -40,21 +42,22 @@ namespace LYW_PLUGIN_CORE
             }
         }
 
-        for (int32 iLoop = 0; iLoop < m_threadNode.size(); iLoop++)
-        {
-            retry = 3;
-            if (m_threadNode[iLoop] != NULL)
-            {
-                while (retry > 0 && THREAD_FINISHED != m_threadNode[iLoop]->state)
-                {
-                    sleep(1);
-                    retry--;
-                }
+        retry = 3;
 
-                if (retry <= 0)
-                {
-                    LOG_STACK_INFO("Thread Not Finished! MayCause Core!");
-                }
+        while (true)
+        {
+            if (m_threadCount <= 0)
+            {
+                break;
+            }
+
+            sleep(1);
+            retry--;
+
+            if (retry <= 0)
+            {
+                LOG_STACK_INFO("Thread Not Finished! MayCause Core!");
+                break;
             }
         }
     }
@@ -73,6 +76,7 @@ namespace LYW_PLUGIN_CORE
         
         //执行工作线程
         node->self->WorkThread(node);
+
 
         return NULL;
     }
@@ -95,9 +99,12 @@ namespace LYW_PLUGIN_CORE
         threadNode->startTime = 0;
         threadNode->state = THREAD_FREE;
 
+        __sync_fetch_and_add(&m_threadCount, 1);
+
         if (pthread_create(&thread, &attr, WorkThreadEnter, threadNode) > 0 )
         {
             LOG_ERROR("Pthread Create Failed!! errno [%d]", errno);
+            __sync_fetch_and_sub(&m_threadCount, 1);
             return false;
         }
 
@@ -143,11 +150,18 @@ namespace LYW_PLUGIN_CORE
         }
         
         //线程退出
+        delete node;
         node->state = THREAD_FINISHED;
+        __sync_fetch_and_sub(&m_threadCount, 1);
         LOG_INFO("Thread Finished!");
     }
 
     int32 Thread::TaskResourceAssessment()
+    {
+        return 0;
+    }
+
+    int32 Thread::CPUResourceAssessment()
     {
         return 0;
     }
@@ -163,9 +177,6 @@ namespace LYW_PLUGIN_CORE
         //非阻塞线程（执行时间 不超过1s, 包括空闲线程）
         int32 noBlockThreadCount = 0;
         
-        //执行初始化
-        Init();
-
         //线程调整
         //执行时间超过 1s的线程 都不计算到线程池总数里
         for (int32 iLoop = 0; iLoop < m_threadNode.size(); iLoop++)
@@ -183,7 +194,6 @@ namespace LYW_PLUGIN_CORE
                             //不能通过执行时间去判断当前线程是计算密集型 还是 IO密集型 （针对IO密集型线程 可以通过增加线程提升效率） 
                             noBlockThreadCount++;
                         }
-
                         break;
                     }
                     case THREAD_FREE:
@@ -237,7 +247,7 @@ namespace LYW_PLUGIN_CORE
             //资源评测超过6 不会移除线程
             //线程总数不足持有线程数量
             //持续探测无空闲线程 
-            if ((noBlockThreadCount < m_holdThreadCount) || (m_checkRecord < -5 || (TaskResourceAssessment() >= 6)))
+            if ((noBlockThreadCount < m_holdThreadCount) || (m_checkRecord < -5 || (TaskResourceAssessment() >= 6 && CPUResourceAssessment() <= 8)))
             {
                 if (noBlockThreadCount < m_maxThreadCount)
                 {
@@ -312,30 +322,22 @@ namespace LYW_PLUGIN_CORE
         }
     }
 
-    void  Thread::Init()
+    void  Thread::QuickCreateThread()
     {
-        if (!m_isInit)
+        //拉起工作线程
+        for (int32 iLoop = 0; iLoop < m_holdThreadCount; iLoop++)
         {
-            m_isInit = true;
-            
-            //拉起工作线程
-            for (int32 iLoop = 0; iLoop < m_threadNode.size(); iLoop++)
+            ThreadNode_t *node = new(std::nothrow) ThreadNode_t;
+            if (NULL == node)
             {
-                m_threadNode[iLoop] = NULL;
+                LOG_STACK_INFO("New Failed\n");
+                continue;
             }
 
-            for (int32 iLoop = 0; iLoop < m_holdThreadCount; iLoop++)
-            {
-                ThreadNode_t *node = new(std::nothrow) ThreadNode_t;
-                if (NULL == node)
-                {
-                    LOG_STACK_INFO("New Failed\n");
-                    continue;
-                }
+            m_threadNode[iLoop] = node;
                     
-                //创建线程
-                CreateWorkThread(node);
-            }
+            //创建线程
+            CreateWorkThread(node);
         }
     }
 }
