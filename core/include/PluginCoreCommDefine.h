@@ -30,6 +30,18 @@ namespace LYW_PLUGIN_CORE
     typedef unsigned char uint8;
     typedef unsigned char ubyte;
     typedef void * pvoid;
+
+
+    /**
+     * @brief           错误码
+     */
+    typedef enum tag_ErrCode
+    {
+        SUC_SUCCESS = 0,                ///< 通用成功
+        ERR_TIMEOUT = -1,               ///< 超时
+        ERR_INVALID_MSGQUEUE = -2,      ///< 消息队列无效 
+        ERR_INVALID_PARAM = -3,         ///< 无效的参数
+    } eErrCode;
     
     
     /**
@@ -194,8 +206,11 @@ FUNCTION_DEFINE_CALL(args1, args2, args3, args4, args5)
 FUNCTION_DEFINE_END
 
 
-    typedef uint32 ID;                                                  ///< 作为索引使用的唯一ID 
-    
+
+    typedef int32 ID;                                                   ///< 作为索引使用的唯一ID 
+
+    typedef int32 EventID;                                              ///< 作为索引使用的唯一ID 
+
     typedef Function<int32(const byte *, int32)> LogWriteFunc;          ///< 写日志函数
 
     typedef int64 TaskHandle;                                           ///< 任务句柄 

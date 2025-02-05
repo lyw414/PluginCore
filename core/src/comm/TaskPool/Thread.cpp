@@ -24,7 +24,7 @@ namespace LYW_PLUGIN_CORE
 
         m_holdThreadCount = holdThread;
 
-        for (int32 iLoop = 0; iLoop < m_threadNode.size(); iLoop++)
+        for (uint32 iLoop = 0; iLoop < m_threadNode.size(); iLoop++)
         {
             m_threadNode[iLoop] = NULL;
         }
@@ -34,7 +34,7 @@ namespace LYW_PLUGIN_CORE
     Thread::~Thread()
     {
         int32 retry = 3;
-        for (int32 iLoop = 0; iLoop < m_threadNode.size(); iLoop++)
+        for (uint32 iLoop = 0; iLoop < m_threadNode.size(); iLoop++)
         {
             if (NULL != m_threadNode[iLoop])
             {
@@ -179,7 +179,7 @@ namespace LYW_PLUGIN_CORE
         
         //线程调整
         //执行时间超过 1s的线程 都不计算到线程池总数里
-        for (int32 iLoop = 0; iLoop < m_threadNode.size(); iLoop++)
+        for (uint32 iLoop = 0; iLoop < m_threadNode.size(); iLoop++)
         {
             if (m_threadNode[iLoop] != NULL)
             {
@@ -267,7 +267,7 @@ namespace LYW_PLUGIN_CORE
             {
                 int32 nodeIndex = -1;
 
-                for (int32 iLoop = 0; iLoop < m_threadNode.size(); iLoop++)
+                for (uint32 iLoop = 0; iLoop < m_threadNode.size(); iLoop++)
                 {
                     //找到空闲的所以并插入
                     if (NULL == m_threadNode[iLoop])
@@ -299,7 +299,7 @@ namespace LYW_PLUGIN_CORE
             }
             case THREAD_OPT_FREE:
             {
-                for (int32 iLoop = 0; iLoop < m_threadNode.size(); iLoop++)
+                for (uint32 iLoop = 0; iLoop < m_threadNode.size(); iLoop++)
                 {
                     if (m_threadNode[iLoop] != NULL)
                     {

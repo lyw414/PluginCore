@@ -23,6 +23,8 @@ set(SOURCES
     ./src/comm/NodeList/NodeList.cpp
     ./src/comm/TaskPool/Thread.cpp
     ./src/comm/TaskPool/Task.cpp
+    ./src/comm/MsgQueue/MsgQueue.cpp
+    ./src/comm/MsgQueue/MsgQueueBasic.cpp
 )
 
 #头文件拷贝

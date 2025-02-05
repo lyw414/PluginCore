@@ -2,6 +2,8 @@
 //#include "NodeList/NodeList.h"
 
 #include "TaskPool/Thread.h"
+#include "MsgQueue/shm/AddrMap.hpp"
+#include "PluginCoreCommDefine.h"
 
 #include <unistd.h>
 #include <stdint.h>
@@ -45,13 +47,23 @@ namespace LYW_PLUGIN_CORE
 
 int main()
 {
-    LYW_PLUGIN_CORE::A a;
+    //LYW_PLUGIN_CORE::A a;
 
-    while (true)
-    {
-        usleep(100000);
-        a.Daemon();
-    }
+    //while (true)
+    //{
+    //    usleep(100000);
+    //    a.Daemon();
+    //}
+    
+    LYW_PLUGIN_CORE::AddrMap addMap;
+
+    addMap.Insert((LYW_PLUGIN_CORE::int8 *)0x100, 1000);
+
+    addMap.Insert((LYW_PLUGIN_CORE::int8 *)0x200, 1000);
+
+    addMap.Remove((LYW_PLUGIN_CORE::int8 *)0x201);
+    
+    printf("%p\n", addMap.Find((char *)0x101));
 
     return 0;
 }
