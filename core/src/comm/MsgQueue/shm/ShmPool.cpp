@@ -25,10 +25,6 @@ namespace LYW_PLUGIN_CORE
 
     eErrCode ShmPool::ShmLock(ShmLock_t &lock)
     {
-        if (NULL == m_shmPool)
-        {   
-            return ERR_SHMPOOL_NOT_INIT;
-        }
         pthread_mutex_lock(&lock.lock);
         lock.pid = m_pid;
         return SUC_SUCCESS;
@@ -36,10 +32,6 @@ namespace LYW_PLUGIN_CORE
 
     eErrCode ShmPool::ShmUnLock(ShmLock_t &lock)
     {
-        if (NULL == m_shmPool)
-        {   
-            return ERR_SHMPOOL_NOT_INIT;
-        }
         lock.pid = 0;
         pthread_mutex_unlock(&lock.lock);
         return SUC_SUCCESS;
@@ -47,25 +39,18 @@ namespace LYW_PLUGIN_CORE
 
     eErrCode ShmPool::InsertList(ShmBlockList_t &list, ShmBlockListNode_t &basicNode, ShmBlockListNode_t &inSertNode, eListOpt opt)
     {
-        //ShmBlockNode_t *headBlockNode = NULL;
-        //ShmBlockNode_t *headBlockNodePre = NULL;
-        //ShmBlockNode_t *headBlockNodeNext = NULL;
-        //ShmBlockNode_t *tailBlockNode = NULL;
-        //ShmBlockNode_t *tailBlockNodePre = NULL;
-        //ShmBlockNode_t *tailBlockNodeNext = NULL;
-        //ShmBlockNode_t *basicBlockNode = NULL;
-        //ShmBlockNode_t *basicBlockNodePre = NULL;
-        //ShmBlockNode_t *basicBlockNodeNext= NULL;
-        //ShmBlockNode_t *insertBlockNode = NULL;
-        //ShmBlockNode_t *insertBlockNodePre = NULL;
-        //ShmBlockNode_t *insertBlockNodeNext = NULL;
-        
         //预处理链接
-        if (NULL == m_shmPool)
-        {   
-            return ERR_SHMPOOL_NOT_INIT;
-        }
+        ShmBlockNode_t * shmBlockNodeHead = NULL;
+        ShmBlockNode_t * shmBlockNodeTail = NULL;
         
+        shmBlockNodeHead = (ShmBlockNode_t *)TransToMmAddr(list.head.current);
+        shmBlockNodeTail = (ShmBlockNode_t *)TransToMmAddr(list.tail.current);
+
+        if (NULL == shmBlockNodeHead)
+        {
+
+        }
+
         return SUC_SUCCESS;
     }
 

@@ -69,15 +69,6 @@ namespace LYW_PLUGIN_CORE
             } ShmBlockAddr_t;
 
             /**
-             * @brief               共享内存块链表
-             */
-            typedef struct __attribute__((aligned(4))) tag_ShmBlockList
-            {
-                ShmBlockAddr_t head;    ///< 首节点
-                ShmBlockAddr_t tail;    ///< 尾节点
-            } ShmBlockList_t;
-
-            /**
              * @brief               共享内存块链表节点
              */
             typedef struct __attribute__((aligned(4))) tag_ShmBlockListNode
@@ -86,6 +77,16 @@ namespace LYW_PLUGIN_CORE
                 ShmBlockAddr_t next;    ///< 后节点
                 ShmBlockAddr_t current; ///< 当前节点
             } ShmBlockListNode_t;
+
+            /**
+             * @brief               共享内存块链表
+             */
+            typedef struct __attribute__((aligned(4))) tag_ShmBlockList
+            {
+                ShmBlockListNode_t head;    ///< 首节点
+                ShmBlockListNode_t tail;    ///< 尾节点
+            } ShmBlockList_t;
+
 
             /**
              * @brief               共享内存锁
