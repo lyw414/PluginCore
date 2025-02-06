@@ -38,9 +38,13 @@ namespace LYW_PLUGIN_CORE
     typedef enum tag_ErrCode
     {
         SUC_SUCCESS = 0,                ///< 通用成功
-        ERR_TIMEOUT = -1,               ///< 超时
-        ERR_INVALID_MSGQUEUE = -2,      ///< 消息队列无效 
-        ERR_INVALID_PARAM = -3,         ///< 无效的参数
+        ERR_FAILED = -1,                ///< 通用失败
+        ERR_TIMEOUT = -2,               ///< 超时
+        ERR_INVALID_MSGQUEUE = -3,      ///< 消息队列无效 
+        ERR_INVALID_PARAM = -4,         ///< 无效的参数
+        ERR_SHMPOOL_NOT_INIT = -5,      ///< 共享缓存池未初始化
+        ERR_INVALID_SHMADDR = -6,       ///< 无效的共享缓存块地址
+        ERR_SHM_OPT_FAILD = -7,         ///< 无效的共享缓存块地址
     } eErrCode;
     
     

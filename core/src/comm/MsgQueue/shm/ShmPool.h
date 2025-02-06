@@ -14,6 +14,7 @@
 
 #include "PluginCoreCommDefine.h"
 #include "MsgQueue/shm/AddrMap.hpp"
+#include "DynamicArray/DynamicArray.hpp"
 
 #include <pthread.h>
 #include <sys/shm.h>
@@ -55,43 +56,120 @@ namespace LYW_PLUGIN_CORE
     class _VISIBLE_ ShmPool 
     {
         private:
-            typedef struct tag_ShmAddr
+            /**
+             * @brief               共享内存块地址
+             */
+            typedef struct __attribute__((aligned(4))) tag_ShmBlockAddr
             {
-                key_t key;          ///< 共享内存块键值
+                key_t key;          ///< 共享内存块键值 
                 uint32 offset;      ///< 偏移量
-            } ShmAddr_t;
+                uint32 uuid;        ///< 块id 键值存在复用的情况
+                int32 index;        ///< 块索引号
+                int32 isValid;      ///< 是否有效 0 无效 其他有效
+            } ShmBlockAddr_t;
 
+            /**
+             * @brief               共享内存块链表
+             */
+            typedef struct __attribute__((aligned(4))) tag_ShmBlockList
+            {
+                ShmBlockAddr_t head;    ///< 首节点
+                ShmBlockAddr_t tail;    ///< 尾节点
+            } ShmBlockList_t;
+
+            /**
+             * @brief               共享内存块链表节点
+             */
+            typedef struct __attribute__((aligned(4))) tag_ShmBlockListNode
+            {
+                ShmBlockAddr_t pre;     ///< 前节点
+                ShmBlockAddr_t next;    ///< 后节点
+                ShmBlockAddr_t current; ///< 当前节点
+            } ShmBlockListNode_t;
+
+            /**
+             * @brief               共享内存锁
+             */
+            typedef struct __attribute__((aligned(4))) tag_ShmLock
+            {
+                pthread_mutex_t lock;   ///< 进程互斥量
+                pid_t pid;              ///< 持有进程ID -- 防止进程崩溃出现锁无法释放的情况
+            } ShmLock_t;
+
+            /**
+             * @brief               共享内存池
+             */
+            typedef struct __attribute__((aligned(4))) tag_ShmPool
+            {
+               ShmBlockList_t blockList;            ///< 共享内存块链表
+               ShmBlockList_t freeNodeList;         ///< 可分配节点链表
+               ShmLock_t lock;                      ///< 操作锁
+               key_t key;                           ///< 键值
+               int32 index;                         ///< 块键值索引 新增 Block 键值为 key + index
+            } ShmPool_t;
+
+            /**
+             * @brief               共享内存块状态
+             */
             typedef enum tag_BlockState
             {
                 BLK_VALID,      ///< 块可以
-                BLK_INVALID,    ///< 块不可用 - 需要进程自行断开
+                BLK_INVALID,    ///< 块不可用 
             } eBlockState;
 
-            typedef struct __attribute__((aligned(4))) tag_ShmHeadInfo 
+            /**
+             * @brief               共享内存块
+             */
+            typedef struct __attribute__((aligned(4))) tag_ShmBlock
             {
-                key_t b_OccupyBlock;    ///< 非空闲块 链表头节点
-                key_t e_OccupyBlock;    ///< 非空闲块 链表尾节点
+                ShmBlockAddr_t shmBlockAddr;            ///< 块地址
+                ShmBlockListNode_t block_ListNode;      ///< 块链表节点 -> ShmPool::blockList
+                uint32 size;                            ///< 块大小 -- 通常为 1M
+                uint32 leftSize;                        ///< 剩余可分配大小 块会被拆解为多个 BlockNode
+                uint8 shmBlockNode[0];                  ///< ShmBlockNode_t 数组 注意 结构为变长 使用 ShmBlockNode_t::size 进行偏移
+            } ShmBlock_t;
 
-                key_t b_FreeBlock;      ///< 空闲块 链表头节点
-                key_t e_FreeBlock;      ///< 空闲块 链表尾节点
-
-                pthread_mutex_t lock;
-                pid_t lockPid;
-                pid_t daemonPid;   
-            } ShmHeadInfo_t;
-
-            typedef struct __attribute__((aligned(4))) tag_Block
+            /**
+             * @brief               共享内存块节点
+             */
+            typedef struct __attribute__((aligned(4))) tag_ShmBlockNode
             {
-                key_t pre;              ///< 链接前节点
-                key_t next;             ///< 链表后节点
+                ShmBlockAddr_t shmBlockAddr;                ///< 块地址
+                ShmBlockListNode_t blockNode_ListNode;      ///< 块节点链表节点 -> ShmPool::blockList
+                uint32 size;                                ///< 块大小 -- 通常为 64K
+                uint32 leftSize;                            ///< 剩余可分配大小
+                uint8 address[0];                           ///< 开始地址
+            } ShmBlockNode_t;
 
-                eBlockState state;      ///< 块状态 
-                uint32 size;            ///< 块大小 - 不包含头 Block_t 通常为 512K
-                uint32 reCount;         ///< 引用计数 
-                uint32 leftSize;        ///< 剩余可分配大小 不足时 申请新的块
-                key_t id;               ///< 块id - 共享缓存id
-                uint8 data[0];          ///< 数据开始区域
-            } Block_t;
+            /**
+             * @brief               地址映射表节点
+             */
+            class AddrArrayNode
+            { 
+                public:
+                    ShmBlockAddr_t shmBlockAddr;                ///< 块地址
+                    ShmBlock_t *address;                              ///< 虚拟地址
+
+                    /**
+                     * @brief       构造
+                     */
+                    AddrArrayNode()
+                    {
+                        shmBlockAddr.isValid = 0;
+                        shmBlockAddr.index = -1;
+                        shmBlockAddr.uuid = 0;
+                        shmBlockAddr.key = 0;
+                        shmBlockAddr.offset = 0;
+                        address = NULL;
+                    }
+            };
+
+
+            typedef enum tag_ListOpt
+            {
+                INSERT_FRONT,   ///< 前插
+                INSERT_AFTER,   ///< 后插
+            } eListOpt;
 
         private:
 
@@ -137,7 +215,7 @@ namespace LYW_PLUGIN_CORE
              *
              * @return 错误码
              */
-            eErrCode TransToShmAddr (pvoid ptr,  ShmAddr_t &shmAddr);
+            eErrCode TransToShmAddr(pvoid ptr,  ShmBlockAddr_t &shmAddr);
 
             /**
              * @brief           共享缓存地址转换为虚拟地址
@@ -146,7 +224,7 @@ namespace LYW_PLUGIN_CORE
              *
              * @return 虚拟地址 NULL 失败
              */
-            pvoid TransToMmAddr(const ShmAddr_t *shmAddr);
+            pvoid TransToMmAddr(const ShmBlockAddr_t &shmAddr);
 
         private:
 
@@ -169,9 +247,9 @@ namespace LYW_PLUGIN_CORE
              *
              * @param size      块大小
              *
-             * @return 错误码
+             * @return 索引
              */
-            Block_t * CreateBlock(int32 size);
+             int32 CreateBlock(int32 size);
 
             /**
              * @brief           销毁一个块
@@ -183,48 +261,97 @@ namespace LYW_PLUGIN_CORE
             eErrCode DestroyBlock(key_t id);
 
             /**
-             * @brief           链接至一个块
+             * @brief           守护
+             */
+            void Daemon();
+
+        private:
+
+            /**
+             * @brief               锁
              *
-             * @param id        共享内存键值
+             * @param lock          锁结构
              *
              * @return 错误码
              */
-            eErrCode ConnectBlock(key_t id);
+            eErrCode ShmLock(ShmLock_t &lock);
+
+            /**
+             * @brief               解锁
+             *
+             * @param lock          锁结构
+             *
+             * @return 错误码
+             */
+            eErrCode ShmUnLock(ShmLock_t &lock);
+
+        private:    ///< 链表操作
+            /**
+             * @brief               插入链表 -- 线程安全
+             *
+             * @param list          链表
+             * @param basicNode     基准节点
+             * @param inSertNode    待插入的节点
+             * @param opt           操作 默认后插
+             *
+             * @return 错误码
+             */
+            eErrCode InsertList(ShmBlockList_t &list, ShmBlockListNode_t &basicNode, ShmBlockListNode_t &inSertNode, eListOpt opt = INSERT_AFTER);
+
+
+            /**
+             * @brief               移除节点 -- 线程安全
+             *
+             * @param list          链表
+             * @param node          节点
+             *
+             * @return 错误码
+             */
+            eErrCode RemoveList(ShmBlockList_t &list, ShmBlockListNode_t &node);
+
+
+
+        private:    ///< 地址操作
+
+            /**
+             * @brief           是否已经链接
+             *
+             * @param addr      共享缓存地址
+             *
+             * @return true 已连接 false 未链接
+             */
+            bool IsConnected(const ShmBlockAddr_t &addr);
+
+            /**
+             * @brief           链接至一个块
+             *
+             * @param addr      共享缓存地址
+             *
+             * @return 错误码
+             */
+            eErrCode ConnectBlock(const ShmBlockAddr_t &addr);
 
             /**
              * @brief           断开共享内存块链接
              *
-             * @param id        共享内存键值
+             * @param addr      共享内存地址
              *
              * @return 错误码
              */
-            eErrCode DisConnectBlock(key_t id);
+            eErrCode DisConnectBlock(const ShmBlockAddr_t &addr);
 
-            /**
-             * @brief           守护
-             */
-            void Daemon();
-        private:
-            /**
-             * @brief           锁
-             */
-            void ShmLock();
 
-            /**
-             * @brief           解锁
-             */
-            void ShmUnLock();
 
         private:
+            pid_t m_pid;        ///< 当前进程pid
+
             key_t m_headKey;    ///< head 键值
 
-            ShmHeadInfo_t *m_shmHead;   ///< 共享缓存头
+            ShmPool_t *m_shmPool;   ///< 共享缓存头
 
-            std::map<key_t, Block_t *> m_blockMap; ///< 共享缓存块表
-
+            DynamicArray <AddrArrayNode> m_blockAddr;   ///< 块地址
             AddrMap m_addrMap;  ///< 地址map 起始地址为 Block_t *
-
-            pthread_mutex_t m_lock; ///< 资源锁
+            pthread_rwlock_t m_lock;    ///< 资源锁
     };
 }
 #endif
