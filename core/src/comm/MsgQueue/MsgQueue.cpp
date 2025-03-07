@@ -25,7 +25,7 @@ namespace LYW_PLUGIN_CORE
         return m_msgQueue->DisConnect(handle);
     }
 
-    MsgQueue::Session MsgQueue::Pub(ID id, EventID eventID, pvoid msg, int32 msgLen)
+    eErrCode MsgQueue::Pub(ID id, EventID eventID, pvoid msg, int32 msgLen)
     {
         if (NULL == m_msgQueue)
         {
@@ -47,7 +47,7 @@ namespace LYW_PLUGIN_CORE
         return m_msgQueue->Sub(id, eventID, subFunc, usrPtr);
     }
 
-    eErrCode MsgQueue::UnSubBySubHandle(SubHandle handle)
+    eErrCode MsgQueue::UnSub(SubHandle handle)
     {
         if (NULL == m_msgQueue)
         {
@@ -58,7 +58,7 @@ namespace LYW_PLUGIN_CORE
         return m_msgQueue->UnSubBySubHandle(handle);
     }
 
-    eErrCode MsgQueue::UnSub(Handle handle)
+    eErrCode MsgQueue::UnSub()
     {
         if (NULL == m_msgQueue)
         {
@@ -66,18 +66,7 @@ namespace LYW_PLUGIN_CORE
             return ERR_INVALID_MSGQUEUE;
         }
 
-        return m_msgQueue->UnSub(handle);
-    }
-
-    eErrCode MsgQueue::Wait(Session session, int32 timeout)
-    {
-        if (NULL == m_msgQueue)
-        {
-            LOG_ERROR("Invalid Msg Queue!\n");
-            return ERR_INVALID_MSGQUEUE;
-        }
-
-        return m_msgQueue->Wait(session, timeout);
+        return m_msgQueue->UnSub(m_connectHandle);
     }
 }
 

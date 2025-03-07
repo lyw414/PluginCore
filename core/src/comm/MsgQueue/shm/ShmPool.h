@@ -64,8 +64,7 @@ namespace LYW_PLUGIN_CORE
                 key_t key;          ///< 共享内存块键值 
                 uint32 offset;      ///< 偏移量
                 uint32 uuid;        ///< 块id 键值存在复用的情况
-                int32 index;        ///< 块索引号
-                int32 isValid;      ///< 是否有效 0 无效 其他有效
+                int32 index;        ///< 块索引号 < 0 表示无效
             } ShmBlockAddr_t;
 
             /**
@@ -156,7 +155,6 @@ namespace LYW_PLUGIN_CORE
                      */
                     AddrArrayNode()
                     {
-                        shmBlockAddr.isValid = 0;
                         shmBlockAddr.index = -1;
                         shmBlockAddr.uuid = 0;
                         shmBlockAddr.key = 0;
@@ -351,7 +349,7 @@ namespace LYW_PLUGIN_CORE
             ShmPool_t *m_shmPool;   ///< 共享缓存头
 
             DynamicArray <AddrArrayNode> m_blockAddr;   ///< 块地址
-            AddrMap m_addrMap;  ///< 地址map 起始地址为 Block_t *
+            AddrMap m_mmMap;  ///< 地址map 用于快速查找 块的起始地址（使用共享内存块中的任意地址查询 返回块的起始地址与块的信息）
             pthread_rwlock_t m_lock;    ///< 资源锁
     };
 }

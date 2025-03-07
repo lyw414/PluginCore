@@ -60,7 +60,7 @@ namespace LYW_PLUGIN_CORE
              *
              * @return session  < 0 时 表示失败
              */
-            virtual Session Pub(ID id, EventID eventID, pvoid msg, int32 msgLen);
+            virtual eErrCode Pub(ID id, EventID eventID, pvoid msg, int32 msgLen);
 
             /**
              * @brief                   订阅消息
@@ -81,7 +81,7 @@ namespace LYW_PLUGIN_CORE
              *
              * @return 错误码
              */
-            virtual eErrCode UnSubBySubHandle(SubHandle handle);
+            virtual eErrCode UnSub(SubHandle handle);
 
             /**
              * @brief                   取消消息订阅
@@ -90,22 +90,13 @@ namespace LYW_PLUGIN_CORE
              *
              * @return 错误码
              */
-            virtual eErrCode UnSub(Handle handle);
-
-            /**
-             * @brief                   等待消息
-             *
-             * @param session           发布session
-             * @param timeout           超时时间 ms <= 0 表示阻塞
-             *
-             * @return 错误码
-             */
-            virtual eErrCode Wait(Session session, int32 timeout);
+            virtual eErrCode UnSub();
         private:
 
         private:
             MsgQueueBasic *m_msgQueue;  ///< 消息队列实例
-
+            
+            Handle m_connectHandle; ///< 连接句柄
     };
 } 
 

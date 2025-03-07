@@ -30,8 +30,6 @@ namespace LYW_PLUGIN_CORE
 
             typedef int32 Handle;       ///< 链接句柄
             typedef int32 SubHandle;    ///< 订阅句柄
-            typedef int32 Session;      ///< 发布会话
-
             
             typedef Function<void(pvoid, int32, pvoid)> SubFunc;    ///< 订阅处理回调
 
@@ -71,11 +69,11 @@ namespace LYW_PLUGIN_CORE
              * @param id                接受者ID id < 0 时 表示广播
              * @param eventID           消息ID
              * @param msg               消息
-             * @param msgLen            下下哦
+             * @param msgLen            消息长度
              *
-             * @return session  < 0 时 表示失败
+             * @return 错误码
              */
-            virtual Session Pub(ID id, EventID eventID, pvoid msg, int32 msgLen) = 0;
+            virtual eErrCode Pub(ID id, EventID eventID, pvoid msg, int32 msgLen) = 0;
 
             /**
              * @brief                   订阅消息
@@ -106,16 +104,6 @@ namespace LYW_PLUGIN_CORE
              * @return 错误码
              */
             virtual eErrCode UnSub(Handle handle) = 0;
-
-            /**
-             * @brief                   等待消息
-             *
-             * @param session           发布session
-             * @param timeout           超时时间 ms <= 0 表示阻塞
-             *
-             * @return 错误码
-             */
-            virtual eErrCode Wait(Session session, int32 timeout) = 0;
     };
 }
 

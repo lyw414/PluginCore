@@ -45,6 +45,7 @@ namespace LYW_PLUGIN_CORE
         ERR_SHMPOOL_NOT_INIT = -5,      ///< 共享缓存池未初始化
         ERR_INVALID_SHMADDR = -6,       ///< 无效的共享缓存块地址
         ERR_SHM_OPT_FAILD = -7,         ///< 无效的共享缓存块地址
+        ERR_LIST_ERROR = -8,            ///< 链表操作失败
     } eErrCode;
     
     

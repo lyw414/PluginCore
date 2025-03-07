@@ -42,14 +42,30 @@ namespace LYW_PLUGIN_CORE
         //预处理链接
         ShmBlockNode_t * shmBlockNodeHead = NULL;
         ShmBlockNode_t * shmBlockNodeTail = NULL;
+        ShmBlockNode_t * shmBlockNodeBasicNode = NULL;
+        ShmBlockNode_t * shmBlockNodeInsertNode = NULL;
         
         shmBlockNodeHead = (ShmBlockNode_t *)TransToMmAddr(list.head.current);
         shmBlockNodeTail = (ShmBlockNode_t *)TransToMmAddr(list.tail.current);
+        shmBlockNodeBasicNode = (ShmBlockNode_t *)TransToMmAddr(basicNode.current);
 
         if (NULL == shmBlockNodeHead)
         {
-
+            if (NULL == shmBlockNodeBasicNode) 
+            {
+                //直接插入
+                list.head = inSertNode;
+                list.tail= inSertNode;
+                inSertNode.pre.isValid = 0;
+                inSertNode.next.isValid = 0;
+            }
+            else
+            {
+                return ERR_LIST_ERROR;
+            }
         }
+
+
 
         return SUC_SUCCESS;
     }
@@ -89,7 +105,7 @@ namespace LYW_PLUGIN_CORE
             return ERR_SHMPOOL_NOT_INIT;
         }
          
-        if (0 == addr.isValid)
+        if (addr.index < 0)
         {
             LOG_ERROR("Invalid Shm Address key [%d] index [%d] uuid [%u] offset [%d]\n", addr.key, addr.index, addr.uuid, addr.offset);
             return ERR_INVALID_SHMADDR;
@@ -121,7 +137,7 @@ namespace LYW_PLUGIN_CORE
                 return ERR_SHM_OPT_FAILD;
             }
             
-            m_addrMap.Remove(m_blockAddr[addr.index].address);
+            m_mmMap.Remove(m_blockAddr[addr.index].address);
         }
 
         //清理地址表
@@ -142,7 +158,7 @@ namespace LYW_PLUGIN_CORE
         {
             //更新虚拟地址表
             ShmBlock_t *shmBlock = (ShmBlock_t *)addrArrayNode.address;
-            m_addrMap.Insert(addrArrayNode.address, shmBlock->size + sizeof(ShmBlock_t));
+            m_mmMap.Insert(addrArrayNode.address, shmBlock->size + sizeof(ShmBlock_t));
             m_blockAddr[addr.key] = addrArrayNode;
         }
         else
@@ -164,7 +180,7 @@ namespace LYW_PLUGIN_CORE
             return ERR_SHMPOOL_NOT_INIT;
         }
          
-        if (0 == addr.isValid)
+        if (addr.index < 0)
         {
             LOG_ERROR("Invalid Shm Address key [%d] index [%d] uuid [%u] offset [%d]\n", addr.key, addr.index, addr.uuid, addr.offset);
             return ERR_INVALID_SHMADDR;
@@ -185,7 +201,7 @@ namespace LYW_PLUGIN_CORE
         }
         
         //移除地址映射
-        m_addrMap.Remove(m_blockAddr[addr.index].address);
+        m_mmMap.Remove(m_blockAddr[addr.index].address);
         m_blockAddr.Erase(addr.index);
 
         pthread_rwlock_unlock(&m_lock);
@@ -197,15 +213,17 @@ namespace LYW_PLUGIN_CORE
     pvoid ShmPool::TransToMmAddr(const ShmBlockAddr_t &shmAddr)
     {
         pvoid ptr = NULL;
-        if (0 == shmAddr.isValid)
+
+        if (shmAddr.index < 0)
         {
-            return NULL;
+            //直接返回空
+            return ptr;
         }
 
-        //连接至内存
+        //连接至内存 -- 已连接的不会额外链接
         if (SUC_SUCCESS != ConnectBlock(shmAddr))
         {
-            return NULL;
+            return ptr;
         }
 
         pthread_rwlock_rdlock(&m_lock);

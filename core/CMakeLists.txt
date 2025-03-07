@@ -57,7 +57,6 @@ add_custom_target(copy_cfg_files ALL COMMAND ${CMAKE_COMMAND} -E copy ${CFG_SOUR
 #编译选项
 #set(BUILD_TYPE "release")
 set(BUILD_TYPE "debug")
-
 if (BUILD_TYPE STREQUAL "debug")
     #target_compile_options(PluginCore PRIVATE -g -Wall -fsanitize=address -fno-omit-frame-pointer)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wall -fsanitize=address -fno-omit-frame-pointer -lpthread -ldl")
