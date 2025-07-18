@@ -4,6 +4,7 @@
 
 #include <errno.h>
 #include <unistd.h>
+#include <stdint.h>
 
 #define SHM_POOL_FILE_PATH "/dev/zero"
 
@@ -468,23 +469,65 @@ namespace LYW_PLUGIN_CORE
     pvoid ShmPool::Malloc(int32 size)
     {
         pvoid ptr = NULL;
-        if (NULL == m_shmPool)  
+
+
+        if (size <= 0)
+        {
+            return ptr;
+        }
+
+        if (NULL == m_shmPool || size <= 0)  
         {
             LOG_ERROR("shmPool Not Init!\n");
             return ptr;
         }
 
-        //计算size指数
 
-        return NULL;
+        //计算size指数
+        int exp = Exponent((size + 1) / 8192);
+
+        ShmLock(m_shmPool->lock);
+            ShmPoolList freeList(&m_shmPool->blockFreeListArray[exp], *this);
+            ShmPoolList busyList(&m_shmPool->blockBusyList, *this);
+        while (true)
+        {
+            if (0 != freeList.Size())
+            {
+                ShmBlock_t *blk = (ShmBlock_t *)freeList.Front();
+                if (blk->leftSize >= sizeof(ShmNode_t) + size)
+                {
+                    ptr = blk->nodeArray + (blk->size - blk->leftSize) + sizeof(ShmNode_t);
+                    blk->reCount++;
+                    break;
+                }
+
+                //归还
+
+                continue;
+            }
+
+            //申请
+        }
+        ShmUnLock(m_shmPool->lock);
+        return ptr;
     }
 
-    int32 ShmPool::Exponent(int32 num)
+    int32 ShmPool::Exponent(uint32 num)
     {
-        int32 exp = 0;
-        int32 res = sizeof(num) * 8;
+        int32 pos = sizeof(num) * 8 - 1 - __builtin_clz(num);
 
-        
-        return exp;
+        if (0 == num)
+        {
+            return 0;
+        }
+
+        if (0 != (num & (~(1ull << pos))))
+        {
+            return pos + 1;
+        }
+        else
+        {
+            return pos;
+        }
     }
 }

@@ -69,11 +69,8 @@ int main()
 
     LYW_PLUGIN_CORE::ShmPool shmPool(123);
 
-
-    while (true)
-    {
-        sleep(10);
-    }
+    printf("%d\n", shmPool.Exponent(0));
+    printf("%d\n", shmPool.Exponent(64));
 
     return 0;
 }

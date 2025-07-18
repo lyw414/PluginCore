@@ -242,6 +242,7 @@ namespace LYW_PLUGIN_CORE
              */
             int32 AllocateSupperBlockIndex(void);
 
+       public:
             /**
              * @brief           计算num的2的幂 2^(n - 1) < num <= 2^n 
              *
@@ -249,7 +250,7 @@ namespace LYW_PLUGIN_CORE
              *
              * @return 幂次
              */
-            int32 Exponent(int32 num);
+            int32 Exponent(uint32 num);
 
         private:
             pid_t m_pid; ///< 当前进程pid

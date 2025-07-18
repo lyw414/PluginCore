@@ -10,14 +10,15 @@ namespace LYW_PLUGIN_CORE
 
     ShmPoolList::~ShmPoolList()
     {
+        //m_shmPool.TransToMmAddr();
     }
 
-    ShmPoolList::Node_t * Pop_front()
+    ShmPoolList::Node_t * ShmPoolList::Pop_front()
     {
         return NULL;
     }
 
-    ShmPoolList::Node_t * Front()
+    ShmPoolList::Node_t * ShmPoolList::Front()
     {
         return NULL;
     }
@@ -49,5 +50,15 @@ namespace LYW_PLUGIN_CORE
         }
  
         return m_list->size;
+    }
+
+    void ShmPoolList::Push_Back(Node_t *node)
+    {
+        return;
+    }
+
+    void ShmPoolList::Push_Front(Node_t *node)
+    {
+        return;
     }
 }
