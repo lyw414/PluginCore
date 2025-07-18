@@ -25,6 +25,8 @@ set(SOURCES
     ./src/comm/TaskPool/Task.cpp
     ./src/comm/MsgQueue/MsgQueue.cpp
     ./src/comm/MsgQueue/MsgQueueBasic.cpp
+    ./src/comm/MsgQueue/shm/shmPool.cpp
+    ./src/comm/MsgQueue/shm/shmPoolList.cpp
 )
 
 #头文件拷贝
