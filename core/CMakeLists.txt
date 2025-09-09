@@ -16,6 +16,9 @@ include_directories(${CMAKE_BINARY_DIR}/include
 #文件输出路径
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/out/lib)
 
+#设置编译关系文件
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 #源码
 set(SOURCES 
     ./src/comm/Log/Log.cpp
